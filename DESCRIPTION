@@ -1,0 +1,15 @@
+Package: ELMSurv
+Type: Package
+Title: Extreme Learning Machine for Survival Analysis 
+Version: 0.4
+Date: 2017-08-19
+Author: Hong Wang
+Maintainer: Hong Wang <wh@csu.edu.cn>
+Description: We use the Buckley-James method to impute the data and extend the emerging Extreme Learning Machine approach to survival analysis. Currently, only right censored data are supported.
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.12.4),survival
+LinkingTo: Rcpp,RcppArmadillo
+RoxygenNote: 6.0.1
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr

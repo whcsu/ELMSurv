@@ -1,0 +1,111 @@
+---
+title: "A Survival Ensemble of Extreme Learning Machine"
+author: "Hong Wang, Jianxin Wang and Lifeng Zhou"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Due to the fast learning speed, simplicity of implementation and minimal human intervention, extreme learning machine has received considerable attentions recently, mostly from the machine learning community. Generally, extreme learning machine and its various variants focus on classification and regression problems. Its potential application in analyzing censored time-to-event data is yet to be verified. In this study, we present an extreme learning machine ensemble to model right-censored survival data by combining the Buckley-James transformation and the random forest framework. According to experimental and statistical analysis results, we show that the proposed model outperforms popular survival models such as random survival forest, Cox proportional hazard models on well-known low-dimensional and high-dimensional benchmark datasets in terms of both prediction accuracy and time efficiency.
+
+## Motivation
+
+In this article, we want to explore the plausibility of extending the extreme learning machine (ELM), an emerging fast classification and regression learning algorithm for  single-hidden  layer feedforward neural networks (SLFN), to analysis of right-censored survival data. The main concept behind the ELM
+is the replacement of a computation-intensive procedure of finding the input weights and  bias  values  of the hidden layer by just random initializations. The subsequent output weights of the network can be calculated analytically and efficiently using a least square approach and this usually implies a fast model training speed. Given enough hidden neurons, ELM is proven to be a universal function approximator.
+
+## Major concerns
+
+Before applying ELM to censored survival data, two vital issues have to be properly addressed. First, ELM itself does not  handle censored survival times and simple exclusion of censored observations from training data will result in significant biases in event predictions. Second,  ELM is somewhat sensitive to random initialization of input-layer weights and hidden-layer biases, and this might will incur unstable predictions.  In this research, we deal with the first issue by replacing the survival times of censored observations with surrogate values using the Buckley-James estimator, which is a censoring unbiased transformation in nature. For the second issue, we will adopt a well-established  random forest ensemble learning framework  which is most effective when the base learner is unstable. In our approach, the base learners in the original random forest is changed from decision trees  to ELM neural networks.
+
+## The Buckley-James Estimator
+Suppose that we have a training data $D$ of $n$ observations and sample covariates ${\mathbf x}$ are $p$-dimensional vectors namely, ${\mathbf x}_i=(x_{i1},x_{i2},\cdots, x_{ip}), i \in 1,2,\cdots, n$. The Buckley-James estimator assumes that the transformed survival time ( e.g. a monotone transformation such as the logarithm transform) $T_i$ follows a linear regression
+\begin{equation} \label{bj1}
+T_i=\alpha+{\mathbf x}_i \beta+\epsilon_i,    \ \ \ \ i=1,\cdots, n
+\end{equation}
+where $\epsilon_i$ is the i.i.d error term with $E(\epsilon_i)=0$ and $Var(\epsilon_i) =\sigma^2$. For simplicity, we can absorb the unknown intercept $\alpha$ into $\epsilon_i$ and a new term would be $\xi_i=\alpha+\epsilon_i$. Consequently, the above model could be reformulated as
+
+\begin{equation} \label{bj2}
+T_i={\mathbf x}_i \beta+\xi_i,    \ \ \ \ i=1,\cdots, n
+\end{equation}
+
+If there were no censoring, parameters of the above model could be estimated via an ordinary least square approach or its regularized extensions. However, in many cases, only censored observations from $Y$ are available. In the case of right-censored data, we can only observe $(Y_i,\delta_i, {\mathbf x_i})$, where $Y_i=min(T_i, C_i)$, $C_i$ is the transformed censoring time and  $\delta_i=I(T_i\le C_i) $,  the censoring indicator. And, in the presence of censoring, the usual least square approach is not applicable. Buckley and James  proposed to approximate those censored survival times by their conditional expectations and define the newly imputed survival times as
+\begin{equation}
+Y_i^*=Y_i \delta_i+E(T_i|T_i>Y_i,{\mathbf x_i})(1-\delta_i),  \ \ \ \ i=1,\cdots, n
+\end{equation}
+For uncensored observations, $\delta_i=1$ and $Y_i^*=T_i$; for censored observations, $\delta_i=0$ and $Y_i^*=E(T_i|T_i>Y_i,{\mathbf x_i})$. Hence, it is easy to verify that $E(Y_i^*)=E(T_i)$.  The Buckley-James  estimator calculates the conditional expectation given the censored survival time and the corresponding covariates by
+
+\begin{eqnarray}
+E(T_i|T_i>Y_i,{\mathbf x_i})&=& E({\mathbf x_i} \beta+\xi_i|{\mathbf x_i} \beta+\xi_i>Y_i)\nonumber \\
+&=& {\mathbf x_i} \beta+E(\xi_i|{\mathbf x_i} \beta+\xi_i>Y_i)  \nonumber \\
+&=& {\mathbf x_i} \beta+E(\xi_i|\xi_i>Y_i-{\mathbf x_i} \beta)  \nonumber \\
+&=& {\mathbf x_i} \beta+\int_{Y_i-{\mathbf x_i} \beta}^{\infty} \frac{\xi dF(\xi)}{1-F(Y_i-{\mathbf x_i}\beta)}
+\end{eqnarray}
+where $F(\xi)$ is an estimator of the distribution function (e.g. the Kaplan-Meier estimator $\hat F$ ) of $\xi$.  Then, we have
+\begin{equation}\label{ystar}
+Y_i^*=Y_i \delta_i+ (1-\delta_i) \bigg({\mathbf x_i}\beta+\frac{\sum\limits_{\xi_j>\xi_i}s_j \xi_j}{1-F(\xi_i)},    \bigg), \ \ \ \ i=1,\cdots, n
+\end{equation}
+where $s_j$ are steps of the estimated function $\hat F$. The unknown coefficients $\beta$ in the above equation  can be computed through a straightforward iterative procedure. And in  case of a high dimensional $p$, a regularized technique with the elastic net penalty proposed in  can be adopted.
+
+
+## Survival Ensemble of ELM
+As is known, the success of an ensemble method lies in the diversity among all the base learners, thus in the proposed method, the most popular methods to achieve diversity from data such as bagging and random subspace are applied. More diversity is introduced through imputation of the censored observations via the Buckley-James estimator. In our approach, only a subset of covariates are considered in estimating the censored survival times for each base kernel ELM. The fact that different estimates might be made to the same censored training sample actually diversify the training data. In fact, according to the study of the DEcoratE (Diverse Ensemble Creation by Oppositional Relabeling of Artificial Training Examples) algorithm, a small portion of artificially generated wrong observations would generate
+a more diverse ensemble. In this sense, even wrong predictions occasionally made by the Buckley-James estimator could improve the ensemble's performance.
+
+The pseudo-code of the proposed survival ensemble of extreme learning machine (SE-ELM) algorithm and more details can be found in [@wangwangzhou2017]:
+
+
+
+## Examples
+
+Survival Ensemble of ELM  with default settings
+
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='asis'}
+set.seed(123)
+require(ELMSurv)
+require(survival)
+## Survival Ensemble of ELM  with default settings
+#Lung DATA
+data(lung)
+lung=na.omit(lung)
+lung[,3]=lung[,3]-1
+n=dim(lung)[1]
+L=sample(1:n,ceiling(n*0.5))
+trset<-lung[L,]
+teset<-lung[-L,]
+rii=c(2,3)
+elmsurvfit=ELMSurvEN(x=trset[,-rii],y=Surv(trset[,rii[1]], trset[,rii[2]]),testx=teset[,-c(rii)])
+# Get the 5th base model
+basemodel=elmsurvfit[[1]]
+#Print the c-index values
+#library(survcomp)
+#ci_elm=concordance.index(-rowMeans(elmsurvfit$precitedtime),teset$days,teset$status)[1] 
+#print(ci_elm)
+```
+
+---
+references:
+- id: wangwangzhou2017
+  title: A Survival Ensemble of Extreme Learning Machine
+  author:
+  - family: Wang
+    given: Hong
+  - family: Wang
+    given: Jianxin
+  - family: Zhou
+    given: Lifeng
+  container-title: Applied Intelligence
+  volume: 49
+  issue: 
+  publisher: Springer
+  page: 1-25
+  type: article-journal
+  issued:
+    year: 2018
+    month: 1
+---
+
+# References
+
