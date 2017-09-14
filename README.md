@@ -5,16 +5,10 @@ The Bibtex record to cite this article is as follows:
 
 @Article{Wang2017,
 author="Wang, Hongand Wang, Jianxin and Zhou, Lifeng",
-
 title="A survival ensemble of extreme learning machine",
-
 journal="Applied Intelligence",
-
 year="2017",month="Sep",day="13",
-
 issn="1573-7497",
-
 doi="10.1007/s10489-017-1063-4",
-
 url="https://doi.org/10.1007/s10489-017-1063-4"
 }
